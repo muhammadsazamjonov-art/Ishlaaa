@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tezkor — yetkazib berish</title>
+<style>
+:root{--bg:#050507;--card:#0f0f16;--line:#24243a;--fg:#fff;--mut:#9a9ab5;--n1:#b44cff;--n2:#2dffb0;--r:16px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px 90px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(5,5,7,.92);backdrop-filter:blur(10px);padding:12px 0;display:flex;gap:8px;align-items:center}
+.logo{font-weight:900;font-size:22px;color:#fff;text-shadow:0 0 12px var(--n1),0 0 24px var(--n1)}
+.logo b{color:var(--n2);text-shadow:0 0 12px var(--n2)}
+.in{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;outline:0}
+.in:focus{border-color:var(--n1);box-shadow:0 0 10px rgba(180,76,255,.5)}
+.btn{background:var(--n1);border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 0 14px rgba(180,76,255,.6);white-space:nowrap}
+.btn.g{background:var(--n2);color:#000;box-shadow:0 0 14px rgba(45,255,176,.5)}
+.btn.o{background:transparent;border:1px solid var(--line);box-shadow:none}
+.btn.sm{padding:6px 10px;font-size:13px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:6px 0 12px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:7px 14px;cursor:pointer;white-space:nowrap}
+.chip.on{border-color:var(--n2);color:var(--n2);box-shadow:0 0 10px rgba(45,255,176,.4)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}
+.card:hover{border-color:var(--n1);box-shadow:0 0 16px rgba(180,76,255,.35)}
+.pic{height:120px;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#1a0f2e,#0a1f1a)}
+.pic img{width:100%;height:100%;object-fit:cover}
+.cb{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.price{font-weight:800;color:var(--n2)}
+.mut{color:var(--mut);font-size:13px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.pane{background:#0b0b12;border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92%;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 0 30px rgba(180,76,255,.3)}
+.pane.wide{max-width:900px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:6px}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:6}
+.item{display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0}
+.item .t{width:46px;height:46px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;flex:none}
+.item .t img{width:100%;height:100%;object-fit:cover}
+.grow{flex:1;min-width:0}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--n2);color:#000;padding:8px 16px;border-radius:20px;font-weight:700;z-index:30}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const K='tz_';let mem={};
+const ld=(k,d)=>{try{const v=localStorage.getItem(K+k);if(v)return JSON.parse(v)}catch(e){}return mem[k]!==undefined?mem[k]:d};
+const sv=(k,v)=>{mem[k]=v;try{localStorage.setItem(K+k,JSON.stringify(v))}catch(e){}};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n).toLocaleString('ru-RU')+" so'm";
+const seed=[
+{id:1,n:'Lavash',p:28000,c:'Fast food',e:'🌯'},{id:2,n:'Burger',p:32000,c:'Fast food',e:'🍔'},
+{id:3,n:'Pitsa',p:65000,c:'Fast food',e:'🍕'},{id:4,n:'Osh',p:45000,c:'Milliy',e:'🍛'},
+{id:5,n:'Somsa',p:12000,c:'Milliy',e:'🥟'},{id:6,n:'Cola 1L',p:9000,c:'Ichimlik',e:'🥤'},
+{id:7,n:'Choy',p:6000,c:'Ichimlik',e:'🍵'},{id:8,n:'Tort bo‘lagi',p:22000,c:'Shirinlik',e:'🍰'}];
+let S={prods:ld('prods',seed),promos:ld('promos',[{code:'TEZKOR10',pct:10}]),orders:ld('orders',[]),users:ld('users',[]),me:ld('me',null),
+cart:{},cat:'Hammasi',q:'',modal:null,admin:false,tab:'p',edit:null,promo:null,toast:''};
+const save=()=>{sv('prods',S.prods);sv('promos',S.promos);sv('orders',S.orders);sv('users',S.users);sv('me',S.me)};
+const cats=()=>['Hammasi',...new Set(S.prods.map(p=>p.c))];
+const pic=p=>p.img?`<img src="${p.img}" alt="">`:esc(p.e||'🍽️');
+const cartList=()=>Object.entries(S.cart).map(([id,q])=>({p:S.prods.find(x=>x.id==id),q})).filter(x=>x.p);
+const sub=()=>cartList().reduce((a,x)=>a+x.p.p*x.q,0);
+const disc=()=>S.promo?Math.round(sub()*S.promo.pct/100):0;
+const tot=()=>sub()-disc();
+const cnt=()=>cartList().reduce((a,x)=>a+x.q,0);
+const toast=m=>{S.toast=m;render();setTimeout(()=>{S.toast='';render()},1800)};
+
+function render(){
+ const ae=document.activeElement,id=ae&&ae.id,pos=ae&&ae.selectionStart;
+ let h=`<header><div class="logo">Tez<b>kor</b></div><input class="in" id="q" placeholder="Qidirish..." value="${esc(S.q)}">
+ <button class="btn o sm" data-a="user">${S.me?'👤 '+esc(S.me.name.split(' ')[0]):'Kirish'}</button></header>
+ <div class="chips">${cats().map(c=>`<div class="chip ${c==S.cat?'on':''}" data-a="cat" data-v="${esc(c)}">${esc(c)}</div>`).join('')}</div>
+ <div class="grid">${S.prods.filter(p=>(S.cat=='Hammasi'||p.c==S.cat)&&p.n.toLowerCase().includes(S.q.toLowerCase())).map(p=>`
+ <div class="card"><div class="pic">${pic(p)}</div><div class="cb"><b>${esc(p.n)}</b><span class="mut">${esc(p.c)}</span>
+ <div class="row"><span class="price">${fmt(p.p)}</span><button class="btn sm g" data-a="add" data-v="${p.id}">+</button></div></div></div>`).join('')}</div>
+ <p class="mut" style="text-align:center;margin-top:30px"><a href="#" data-a="admin" style="color:var(--mut)">Admin</a></p>
+ ${cnt()?`<button class="btn fab" data-a="cart">🛒 Savat · ${cnt()} · ${fmt(tot())}</button>`:''}
+ ${S.toast?`<div class="toast">${esc(S.toast)}</div>`:''}`;
+ if(S.modal)h+=modal();
+ document.getElementById('app').innerHTML=h;
+ if(id){const e=document.getElementById(id);if(e){e.focus();try{e.setSelectionRange(pos,pos)}catch(_){}}}
+}
+function modal(){
+ const m=S.modal;let b='';
+ if(m=='cart'){const L=cartList();b=`<div class="row"><h3>Savat</h3><button class="btn o sm" data-a="close">✕</button></div>
+ ${L.length?L.map(x=>`<div class="item"><div class="t">${pic(x.p)}</div><div class="grow"><b>${esc(x.p.n)}</b><div class="price">${fmt(x.p.p*x.q)}</div></div>
+ <button class="btn o sm" data-a="dec" data-v="${x.p.id}">−</button><b>${x.q}</b><button class="btn o sm" data-a="add" data-v="${x.p.id}">+</button></div>`).join(''):'<p class="mut">Savat bo‘sh</p>'}
+ <div class="row"><input class="in" id="pc" placeholder="Promokod"><button class="btn sm" data-a="promo">Qo‘llash</button></div>
+ ${S.promo?`<div class="mut">Promokod ${esc(S.promo.code)}: −${S.promo.pct}% (−${fmt(disc())})</div>`:''}
+ <h3 class="row"><span>Jami</span><span class="price">${fmt(tot())}</span></h3>
+ ${S.me?`<input class="in" id="ph" placeholder="Telefon" value="${esc(S.me.phone)}"><input class="in" id="ad" placeholder="Manzil">
+ <button class="btn g" data-a="order">Buyurtma berish</button>`:`<button class="btn" data-a="user">Buyurtma uchun kiring</button>`}`}
+ else if(m=='user'){b=S.me?`<div class="row"><h3>${esc(S.me.name)}</h3><button class="btn o sm" data-a="close">✕</button></div><p class="mut">${esc(S.me.phone)}</p>
+ <button class="btn o" data-a="logout">Chiqish</button>`:
+ `<div class="row"><h3>${S.reg?'Ro‘yxatdan o‘tish':'Kirish'}</h3><button class="btn o sm" data-a="close">✕</button></div>
+ ${S.reg?'<input class="in" id="nm" placeholder="Ism">':''}<input class="in" id="tel" placeholder="Telefon"><input class="in" id="pw" type="password" placeholder="Parol">
+ <button class="btn g" data-a="${S.reg?'signup':'login'}">${S.reg?'Ro‘yxatdan o‘tish':'Kirish'}</button>
+ <button class="btn o" data-a="swap">${S.reg?'Akkaunt bor — Kirish':'Yangi akkaunt — Sign up'}</button>`}
+ else if(m=='sent'){const o=S.last;b=`<div class="row"><h3>✅ Buyurtma qabul qilindi</h3><button class="btn o sm" data-a="close">✕</button></div>
+ <p class="mut">Buyurtmani @truesfg ga yuborish uchun tugmani bosing (Telegram ochiladi, matn tayyor).</p>
+ <a class="btn g" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="https://t.me/truesfg?text=${encodeURIComponent(o.msg)}">📨 Telegramga yuborish</a>`}
+ else if(m=='adlogin'){b=`<div class="row"><h3>Admin kirish</h3><button class="btn o sm" data-a="close">✕</button></div>
+ <input class="in" id="c1" type="password" placeholder="1-kod"><input class="in" id="c2" type="password" placeholder="2-kod"><button class="btn" data-a="adgo">Kirish</button>`}
+ else if(m=='admin'){
+  const tabs=[['p','Mahsulotlar'],['r','Promokodlar'],['o','Buyurtmalar']];
+  b=`<div class="row"><h3>Admin panel</h3><button class="btn o sm" data-a="adout">Chiqish</button></div>
+  <div class="tabs">${tabs.map(t=>`<button class="btn sm ${S.tab==t[0]?'':'o'}" data-a="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`;
+  if(S.tab=='p'){const e=S.edit;
+   b+=e?`<input class="in" id="en" placeholder="Nomi" value="${esc(e.n)}"><input class="in" id="ep" type="number" placeholder="Narxi" value="${esc(e.p)}">
+   <input class="in" id="ec" placeholder="Kategoriya" value="${esc(e.c)}"><input class="in" id="ee" placeholder="Emoji" value="${esc(e.e)}">
+   <div class="row"><div class="t item" style="border:0"><div class="t">${pic(e)}</div></div><input type="file" id="ef" accept="image/*" class="in"></div>
+   <div class="row"><button class="btn g" data-a="psave">Saqlash</button><button class="btn o" data-a="pcancel">Bekor</button></div>`
+   :`<button class="btn g" data-a="pnew">+ Yangi mahsulot</button>`+S.prods.map(p=>`<div class="item"><div class="t">${pic(p)}</div><div class="grow"><b>${esc(p.n)}</b><div class="mut">${fmt(p.p)} · ${esc(p.c)}</div></div>
+   <button class="btn o sm" data-a="pedit" data-v="${p.id}">✎</button><button class="btn o sm" data-a="pdel" data-v="${p.id}">🗑</button></div>`).join('')}
+  else if(S.tab=='r'){b+=`<div class="row"><input class="in" id="rc" placeholder="Kod (masalan YOZ20)"><input class="in" id="rp" type="number" placeholder="%" style="width:90px"><button class="btn g sm" data-a="radd">+</button></div>`+
+   S.promos.map((r,i)=>`<div class="item"><div class="grow"><b>${esc(r.code)}</b> <span class="price">−${r.pct}%</span></div><button class="btn o sm" data-a="rdel" data-v="${i}">🗑</button></div>`).join('')}
+  else b+=S.orders.length?S.orders.slice().reverse().map(o=>`<div class="item"><div class="grow"><b>#${o.id} · ${esc(o.name)}</b> <span class="price">${fmt(o.total)}</span>
+   <div class="mut">${esc(o.phone)} · ${esc(o.addr)}<br>${esc(o.items)}${o.promo?'<br>Promo: '+esc(o.promo):''}<br>${esc(o.date)}</div></div></div>`).join(''):'<p class="mut">Buyurtmalar yo‘q</p>'}
+ return `<div class="sheet" data-a="bg"><div class="pane ${m=='admin'?'wide':''}">${b}</div></div>`}
+
+const v=id=>(document.getElementById(id)||{}).value||'';
+document.addEventListener('input',e=>{if(e.target.id=='q'){S.q=e.target.value;render()}});
+document.addEventListener('change',e=>{if(e.target.id=='ef'&&e.target.files[0]){
+ const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,400/Math.max(im.width,im.height)),c=document.createElement('canvas');
+ c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);keep();S.edit.img=c.toDataURL('image/jpeg',.75);render()};im.src=rd.result};rd.readAsDataURL(e.target.files[0])}});
+function keep(){if(S.edit&&document.getElementById('en')){S.edit.n=v('en');S.edit.p=+v('ep');S.edit.c=v('ec')||'Boshqa';S.edit.e=v('ee')}}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,x=t.dataset.v;
+ if(a=='bg'){if(e.target!==t)return;S.modal=null;return render()}
+ if(a=='admin'){e.preventDefault();S.modal=S.admin?'admin':'adlogin'}
+ else if(a=='cat')S.cat=x;
+ else if(a=='add'){S.cart[x]=(S.cart[x]||0)+1}
+ else if(a=='dec'){if(--S.cart[x]<=0)delete S.cart[x]}
+ else if(a=='cart')S.modal='cart';
+ else if(a=='close')S.modal=null;
+ else if(a=='user')S.modal='user';
+ else if(a=='swap')S.reg=!S.reg;
+ else if(a=='logout'){S.me=null;S.modal=null;save()}
+ else if(a=='signup'){const n=v('nm').trim(),p=v('tel').trim(),w=v('pw');
+  if(!n||!p||w.length<4)return toast('Barcha maydonni to‘ldiring (parol ≥4)');
+  if(S.users.some(u=>u.phone==p))return toast('Bu raqam band');
+  const u={name:n,phone:p,pw:w};S.users.push(u);S.me=u;S.modal=null;save()}
+ else if(a=='login'){const u=S.users.find(u=>u.phone==v('tel').trim()&&u.pw==v('pw'));
+  if(!u)return toast('Telefon yoki parol xato');S.me=u;S.modal=null;save()}
+ else if(a=='promo'){const r=S.promos.find(r=>r.code.toLowerCase()==v('pc').trim().toLowerCase());S.promo=r||null;toast(r?'Promokod qabul qilindi':'Promokod topilmadi');return}
+ else if(a=='order'){const ph=v('ph').trim(),ad=v('ad').trim();if(!ph||!ad)return toast('Telefon va manzilni kiriting');
+  const L=cartList(),items=L.map(x=>x.p.n+' x'+x.q).join(', '),id=S.orders.length+1;
+  const msg=`🛒 Yangi buyurtma #${id}\n👤 ${S.me.name}\n📞 ${ph}\n📍 ${ad}\n\n${L.map(x=>`• ${x.p.n} x${x.q} = ${fmt(x.p.p*x.q)}`).join('\n')}\n\n${S.promo?'🎟 Promo: '+S.promo.code+' (−'+S.promo.pct+'%)\n':''}💰 Jami: ${fmt(tot())}`;
+  const o={id,name:S.me.name,phone:ph,addr:ad,items,promo:S.promo?S.promo.code:'',total:tot(),date:new Date().toLocaleString('ru-RU'),msg};
+  S.orders.push(o);S.last=o;S.cart={};S.promo=null;S.modal='sent';save()}
+ else if(a=='adgo'){if(v('c1')=='ibrohim'&&v('c2')=='2013'){S.admin=true;S.modal='admin'}else return toast('Kod xato')}
+ else if(a=='adout'){S.admin=false;S.modal=null}
+ else if(a=='tab'){S.tab=x;S.edit=null}
+ else if(a=='pnew')S.edit={id:Date.now(),n:'',p:0,c:'Fast food',e:'🍽️',isNew:1};
+ else if(a=='pedit')S.edit={...S.prods.find(p=>p.id==x)};
+ else if(a=='pcancel')S.edit=null;
+ else if(a=='psave'){keep();if(!S.edit.n||!S.edit.p)return toast('Nom va narx kerak');
+  const {isNew,...p}=S.edit;const i=S.prods.findIndex(q=>q.id==p.id);i<0?S.prods.push(p):S.prods[i]=p;S.edit=null;save()}
+ else if(a=='pdel'){S.prods=S.prods.filter(p=>p.id!=x);delete S.cart[x];save()}
+ else if(a=='radd'){const c=v('rc').trim().toUpperCase(),p=+v('rp');if(!c||!(p>0&&p<=100))return toast('Kod va % (1–100)');S.promos.push({code:c,pct:p});save()}
+ else if(a=='rdel'){S.promos.splice(+x,1);save()}
+ render();
+});
+render();
+</script>
+</body>
+</html>
